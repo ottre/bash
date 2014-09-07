@@ -7,7 +7,7 @@
 # last updated: september 2014
 # authors:
 # - ottre
-# mandatory dependencies:
+# hard dependencies:
 # - bash v4
 # - xrandr
 # - findutils, provides xargs
@@ -367,6 +367,8 @@ warn_bad_opt() {
 }
 
 ## assign vars
+die "msg" 200
+
 for dependency in tput xargs xrandr
 do
   command -v $dependency >/dev/null || die "dependency check failed." 3
@@ -458,7 +460,7 @@ then
       ret_val=$?
     fi
     case $ret_val in
-        0) ;;
+      # 0) do nothing 
         1) warn "resetting screen size, ${grn}--boost 0%${clr} is a synonym for
                  ${grn}--reset${clr}."; reset; exit 0;;
         2) warn "resetting screen size, adjusted ${grn}--boost${clr} value is
@@ -488,7 +490,7 @@ then
     check_screen
     ret_val=$?
     case $ret_val in
-      0) ;;
+    # 0) do nothing 
       1) warn "resetting screen size, ${grn}--screen
                ${dsp_max_w}x${dsp_max_h}${clr} is a synonym for
                ${grn}--reset${clr}."; reset; exit 0;;
