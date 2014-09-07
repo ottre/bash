@@ -26,9 +26,6 @@
 # all variables used outside of subroutines must be listed here,
 # in alphabetical order, with a comment if var name isn't self explanatory
 set -o nounset
-# vars used for storing numbers that might have a decimal point, eg
-#   [[ ${2:+set} = set ]] && boost_usr=$2
-# must be string not integer
 declare -- awk_one_liner='' # se
 declare -- blu=''           # terminal colour code
 declare -i boost_int=0      # user specified --boost value, rounded off
@@ -69,20 +66,16 @@ usage() {
 Usage:
   resize.sh --boost [-]xx[%]
   resize.sh --reset
-
 Options:
   -b   --boost     How much to boost screen size by, percentage value.
-
                    For example, ${grn}--boost 40%${clr} would allow you to
                    see 40% more of the windows you have open. If that makes
                    text too small to read, try running ${grn}--boost -5%${clr}
                    a few times until you find a screen size you like.
-
                    Using a negative value will make the script
                    adjust the previously used boost value, so in the example
                    above ${grn}--boost 40%${clr} becomes ${grn}--boost 35%${clr},
                    then ${grn}30%${clr}, then ${grn}25%${clr}, etc.
-
                    Recommended range is 25 to 50%. Computers with a
                    small screen (eg netbooks) should use a value closer
                    to 25%, computers with a large screen but small display
@@ -98,7 +91,6 @@ Options:
                      ${grn}resize.sh --reset${clr} followed by
                      ${grn}resize.sh${clr} 
                    would result in a boost value of ${grn}--boost 40%${clr}.
-
                    Note this works for the ${grn}--screen${clr} option as well,
                    but hasn't been tested.
   -h   --help      Display this help.
@@ -379,7 +371,6 @@ for dependency in tput xargs xrandr
 do
   command -v $dependency >/dev/null || die "dependency check failed." 3
 done
-
 if
   (( $(tput colors) >= 8 ))
 then
@@ -388,12 +379,10 @@ then
   blu="$(tput bold)$(tput setaf 4)"
   clr="$(tput sgr0)"
 fi
-
 # see http://wiki.bash-hackers.org/commands/builtin/mapfile
 # quotes are necessary
 readarray -t xrandr_info <<< "$(xrandr)"
-
-# FIXME: test for all --boost values
+# FIXME: sometimes gets rounded?
 regex="^Screen 0: minimum [0-9]+ x [0-9]+, current ([0-9]+) x ([0-9]+)"
 if
   [[ ${xrandr_info[0]} =~ $regex ]]
@@ -403,7 +392,6 @@ then
 else
   die "regex match failed." 3
 fi
-
 regex="^([A-Z0-9]+) connected primary"
 if
   [[ ${xrandr_info[1]} =~ $regex ]] || \
@@ -413,7 +401,6 @@ then
 else
   die "regex match failed." 3
 fi
-
 # see xrandr | od -t a for number of spaces to match
 # + at end of regex indicates max res
 regex="^ {3}([0-9]+)x([0-9]+) {7}[0-9]{2}\.[0-9].\+"
@@ -426,7 +413,6 @@ then
 else
   die "regex match failed." 3
 fi
-
 scr_rec_min_w=$(( ($dsp_max_w * 125) / 100 ))
 scr_rec_min_h=$(( ($dsp_max_h * 125) / 100 ))
 scr_rec_max_w=$(( ($dsp_max_w * 150) / 100 ))
@@ -459,10 +445,8 @@ then
   then
     # strip percent char and round to nearest integer
     boost_int=$(printf '%.0f' ${boost_usr%\%})
-
     check_boost $boost_int
     ret_val=$?
-
     # if $boost_int is negative, adjust and re-check
     # negative values are treated differently, see usage()
     if
@@ -473,7 +457,6 @@ then
       check_boost $boost_int 1
       ret_val=$?
     fi
-
     case $ret_val in
         0) ;;
         1) warn "resetting screen size, ${grn}--boost 0%${clr} is a synonym for
@@ -492,7 +475,6 @@ then
     warn "discarding value ${grn}${boost_usr}${clr}, not a number."
     use_default
   fi
-
 # handle --screen option
 elif
   [[ ${scr_wh_usr:+set} = set ]]
@@ -503,10 +485,8 @@ then
   then
     scr_new_w=${BASH_REMATCH[1]}
     scr_new_h=${BASH_REMATCH[2]}
-
     check_screen
     ret_val=$?
-
     case $ret_val in
       0) ;;
       1) warn "resetting screen size, ${grn}--screen
@@ -521,13 +501,11 @@ then
     warn "discarding value ${grn}${scr_wh_usr}${clr}, not the right format."
     use_default
   fi
-
 # handle skipped option
 elif
   (( $skip_opt_flag ))
 then
   use_default
-
 # handle no option
 else
   warn "no ${grn}--boost${clr} or ${grn}--screen${clr} option in script args."
@@ -535,15 +513,14 @@ else
 fi
 
 ## body of script
-# calculate $scr_new_ vars for --boost option
+# calculate $scr_new_* vars for --boost option
 if
   (( $boost_int ))
 then
   scr_new_w=$(( ($dsp_max_w * ($boost_int + 100)) / 100 ))
   scr_new_h=$(( ($dsp_max_h * ($boost_int + 100)) / 100 ))
 fi
-
-# calculate $scale for both options
+# calculate $scale for both --boost and --screen options
 awk_one_liner="BEGIN{ print $scr_new_w / $dsp_max_w; }"
 scale=$(
   dc         <<< "5 k $scr_new_w $dsp_max_w / p" 2>/dev/null || \
@@ -552,7 +529,6 @@ scale=$(
   busybox awk -- "$awk_one_liner"                2>/dev/null || \
   get_answer "$scr_new_w / $dsp_max_w"
 ) || die "unable to calculate \$scale." 6
-
 # feedback to user
 printf "%s\n" "Display resolution.: ${dsp_max_w}x${dsp_max_h}"
 printf "%s\n" "Current screen size: ${scr_cur_w}x${scr_cur_h}"
@@ -562,14 +538,11 @@ printf "%s\n" "Command to run.....: xrandr --output $dsp_name
                                            --mode ${dsp_max_w}x${dsp_max_h}
                                            --panning ${scr_new_w}x${scr_new_h}
                                            --scale ${scale}x${scale}" | xargs
-
-# good idea to give user a chance to abort
+# give user 5 seconds to abort, which is plenty of time to read warning msg
 warn "running command in 5 seconds, press ${grn}Ctrl-C${clr} to abort."
 read -t 5 -N 0
-
 xrandr --output $dsp_name \
        --mode ${dsp_max_w}x${dsp_max_h} \
        --panning ${scr_new_w}x${scr_new_h} \
        --scale ${scale}x${scale}
-
 exit 0
