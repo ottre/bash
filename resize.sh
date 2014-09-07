@@ -157,7 +157,7 @@ warn() {
   printf "%s\n" "${blu}Warning${clr}, ${msg,}" | xargs
 }
 
-# reset() se
+# reset() see usage()
 #
 # no parameters
 #
@@ -538,7 +538,7 @@ printf "%s\n" "Command to run.....: xrandr --output $dsp_name
                                            --mode ${dsp_max_w}x${dsp_max_h}
                                            --panning ${scr_new_w}x${scr_new_h}
                                            --scale ${scale}x${scale}" | xargs
-# give user 5 seconds to abort, which is plenty of time to read warning msg
+# give user 5 seconds to abort, plenty of time to read any warning messages
 warn "running command in 5 seconds, press ${grn}Ctrl-C${clr} to abort."
 read -t 5 -N 0
 xrandr --output $dsp_name \
