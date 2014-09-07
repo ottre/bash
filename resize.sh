@@ -7,7 +7,7 @@
 # last updated: september 2014
 # authors:
 # - ottre
-# dependencies:
+# hard dependencies:
 # - bash v4
 # - xrandr
 # - findutils, provides xargs
