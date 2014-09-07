@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -o nounset
+shopt -s extglob
 
 ## script info
 # name: resize.sh
@@ -10,7 +12,6 @@
 # hard dependencies:
 # - bash v4
 # - xrandr
-# - findutils, provides xargs
 # - ncurses, provides tput
 # optional dependencies:
 # - one of the following, for floating point maths:
@@ -25,7 +26,6 @@
 ## declare vars
 # all variables used outside of subroutines must be listed here,
 # in alphabetical order, with a comment if var name isn't self explanatory
-set -o nounset
 declare -- awk_one_liner='' # se
 declare -- blu=''           # terminal colour code
 declare -i boost_int=0      # user specified --boost value, rounded off
@@ -130,18 +130,17 @@ die() {
   if
     (( $# == 2 ))
   then
-    # ${msg,} converts first char in $msg to lowercase,
+    # ${1,} converts first char in $1 to lowercase,
     # so we don't get 'Error, Sanity check failed' which looks wrong
-    local -- msg="$1"
-    msg="${script}: line ${line}: ${red}Error${clr}, ${msg,}"
+    local -- msg="${script}: line ${line}: ${red}Error${clr}, ${1,}"
     local -i code=$2
     in_range 1 255 $code || code=1
   else
     local -- msg="${script}: line ${line}: ${red}unspecified error${clr}."
     local -i code=1
   fi
-  # use xargs to collapse whitespace in long error messages
-  printf "%s\n" "$msg" | xargs >/dev/stderr
+  # collapse whitespace in long error messages
+  printf '%s\n' "${msg//+([[:space:]])/ }" >/dev/stderr
   exit $code
 }
 
@@ -153,8 +152,8 @@ die() {
 # no return value
 warn() {
   (( $# != 1 )) && die "expected 1 parameter for warn(), got $#." 2
-  local -- msg="$1"
-  printf "%s\n" "${blu}Warning${clr}, ${msg,}" | xargs
+  local -- msg="${blu}Warning${clr}, ${1,}"
+  printf '%s\n' "${msg//+([[:space:]])/ }"
 }
 
 # reset() see usage()
@@ -184,7 +183,7 @@ get_answer() {
   if
     [[ ${REPLY:+set} = set ]]
   then
-    printf "%s" $REPLY
+    printf '%s' $REPLY
     return 0
   else
     return 1
@@ -303,14 +302,14 @@ save_default() {
     if
       (( $boost_used_w == $scr_cur_w ))
     then
-      printf "%s\n" "boost_int=${boost_old_int}" >$config
-      printf "%s\n" "Saved default ${grn}--boost ${boost_old_int}%${clr}."
+      printf '%s\n' "boost_int=${boost_old_int}" >$config
+      printf '%s\n' "Saved default ${grn}--boost ${boost_old_int}%${clr}."
     # used --screen option
     else
-      printf "%s\n" "scr_new_w=${scr_cur_w}" >$config
-      printf "%s\n" "scr_new_h=${scr_cur_h}" >>$config
-      printf "%s\n" "Saved default ${grn}--screen
-                     ${scr_cur_w}x${scr_cur_h}${clr}." | xargs
+      printf '%s\n' "scr_new_w=${scr_cur_w}" >$config
+      printf '%s\n' "scr_new_h=${scr_cur_h}" >>$config
+      printf '%s '  "Saved default ${grn}--screen"
+      printf '%s\n' "${scr_cur_w}x${scr_cur_h}${clr}."
     fi
   else
     die "sanity check failed." 2
@@ -367,13 +366,14 @@ warn_bad_opt() {
 }
 
 ## assign vars
-die "msg" 200
-
-for dependency in tput xargs xrandr
+for dependency in tput xrandr
 do
   command -v $dependency >/dev/null || die "dependency check failed." 3
 done
+# only use colors when STDOUT is a terminal
+# and terminal supports 8 or more colors
 if
+  [[ -t 1 ]] && \
   (( $(tput colors) >= 8 ))
 then
   red="$(tput bold)$(tput setaf 1)"
@@ -487,9 +487,7 @@ then
   then
     scr_new_w=${BASH_REMATCH[1]}
     scr_new_h=${BASH_REMATCH[2]}
-    check_screen
-    ret_val=$?
-    case $ret_val in
+    case check_screen in
     # 0) do nothing 
       1) warn "resetting screen size, ${grn}--screen
                ${dsp_max_w}x${dsp_max_h}${clr} is a synonym for
@@ -532,19 +530,19 @@ scale=$(
   get_answer "$scr_new_w / $dsp_max_w"
 ) || die "unable to calculate \$scale." 6
 # feedback to user
-printf "%s\n" "Display resolution.: ${dsp_max_w}x${dsp_max_h}"
-printf "%s\n" "Current screen size: ${scr_cur_w}x${scr_cur_h}"
-printf "%s\n" "New screen size....: ${scr_new_w}x${scr_new_h}"
-printf "%s\n" "Scale..............: $scale"
-printf "%s\n" "Command to run.....: xrandr --output $dsp_name
-                                           --mode ${dsp_max_w}x${dsp_max_h}
-                                           --panning ${scr_new_w}x${scr_new_h}
-                                           --scale ${scale}x${scale}" | xargs
+printf '%s\n' "Display resolution.: ${dsp_max_w}x${dsp_max_h}"
+printf '%s\n' "Current screen size: ${scr_cur_w}x${scr_cur_h}"
+printf '%s\n' "New screen size....: ${scr_new_w}x${scr_new_h}"
+printf '%s\n' "Scale..............: $scale"
+printf '%s '  "Command to run.....: xrandr --output $dsp_name"
+printf '%s '                              "--mode ${dsp_max_w}x${dsp_max_h}"
+printf '%s '                              "--panning ${scr_new_w}x${scr_new_h}"
+printf '%s\n'                             "--scale ${scale}x${scale}"
 # give user 5 seconds to abort, plenty of time to read any warning messages
 warn "running command in 5 seconds, press ${grn}Ctrl-C${clr} to abort."
 read -t 5 -N 0
-xrandr --output $dsp_name \
-       --mode ${dsp_max_w}x${dsp_max_h} \
-       --panning ${scr_new_w}x${scr_new_h} \
-       --scale ${scale}x${scale}
+xrandr --output "$dsp_name" \
+       --mode "${dsp_max_w}x${dsp_max_h}" \
+       --panning "${scr_new_w}x${scr_new_h}" \
+       --scale "${scale}x${scale}"
 exit 0
