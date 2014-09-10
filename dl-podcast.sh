@@ -11,7 +11,7 @@ set -o nounset
 # - ottre
 # mandatory dependencies:
 # - bash v4
-# - gnu coreutils, provides tac and mkdir
+# - gnu coreutils, provides tac and touch
 # - gnu direvent
 # - grep
 # - wget
