@@ -72,10 +72,12 @@ Options:
                    see 40% more of the windows you have open. If that makes
                    text too small to read, try running ${grn}--boost -5%${clr}
                    a few times until you find a screen size you like.
+
                    Using a negative value will make the script
                    adjust the previously used boost value, so in the example
                    above ${grn}--boost 40%${clr} becomes ${grn}--boost 35%${clr},
                    then ${grn}30%${clr}, then ${grn}25%${clr}, etc.
+
                    Recommended range is 25 to 50%. Computers with a
                    small screen (eg netbooks) should use a value closer
                    to 25%, computers with a large screen but small display
@@ -292,10 +294,8 @@ check_screen() {
 # no return value
 save_default() {
   get_boost_old || die "unable to calculate \$boost_old_int." 2
-  check_boost $boost_old_int
-  ret_val=$?
   if
-    (( $ret_val == 0 ))
+    check_boost $boost_old_int
   then
     local -i boost_used_w=$(( ($dsp_max_w * ($boost_old_int + 100)) / 100 ))
     # used --boost option
@@ -370,8 +370,8 @@ for dependency in tput xrandr
 do
   command -v $dependency >/dev/null || die "dependency check failed." 3
 done
-# only use colors when STDOUT is a terminal
-# and terminal supports 8 or more colors
+# only use colours when STDOUT is a terminal
+# and terminal supports at least 8 colours
 if
   [[ -t 1 ]] && \
   (( $(tput colors) >= 8 ))
