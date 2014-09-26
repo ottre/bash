@@ -38,7 +38,7 @@ regex="^http://.*\.(mp3|ogg)$"
 
 ## body of script
 tac "$queue_file" | while read download_url download_file; do
-  download_file="${download_file//\"}"
+  download_file="${download_file:1:-1}"
   downloaded=$(grep -c "$download_file" "$downloaded_log")
   if
     (( ! $downloaded )) && \
