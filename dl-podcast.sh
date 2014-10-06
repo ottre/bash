@@ -43,7 +43,7 @@ proc_download_file() {
     [[ $extension = torrent ]]
   then
     # can't shorten this to ~/torrent... as direvent v5 doesn't update env vars,
-    # $HOME could be /root and ~ is an alias for $HOME
+    # $HOME could be /root and ~ is a synonym for $HOME
     local -- torrents_dir="/home/$(whoami)/torrent.downloads/torrent"
     # strip mp3 dir
     download_file="${download_file##*/}"
@@ -87,7 +87,7 @@ tac "$queue_file" | while read download_url download_file; do
       ! downloaded
     then
       wget -q -t1 -O "$download_file" "$download_url" && \
-      printf '%(%c)T %s\n' -1 "downloaded $download_file" >> "$downloaded_log"
+      printf '%(%c)T - %s\n' -1 "downloaded $download_file" >> "$downloaded_log"
     fi
   fi
 done
