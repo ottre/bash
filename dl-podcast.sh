@@ -7,7 +7,7 @@ set -o nounset
 #          script is supposed to be run by GNU Direvent every time queue file
 #          is modified.
 # license: GPL-2
-# last updated: september 2014
+# last updated: october 2014
 # authors:
 # - ottre
 # mandatory dependencies:
@@ -55,11 +55,12 @@ proc_download_file() {
   fi
 }
 
-# downloaded() checks if $download_file appears in $downloaded_log
+# downloaded() checks if $download_file appears in $downloaded_log,
+# ie it has been downloaded
 #
 # no parameters
 #
-# returns 0 if we got a match, has been downloaded
+# returns 0 if $download_file appears in log
 # returns 1 otherwise
 downloaded() {
   if
