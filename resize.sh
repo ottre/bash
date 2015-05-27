@@ -135,10 +135,11 @@ die() {
     # ${1,} converts first char in $1 to lowercase,
     # so we don't get 'Error, Sanity check failed' which looks wrong
     local -- msg="${script}: line ${line}: ${red}Error${clr}, ${1,}"
+    [[ ${msg: -1} == '.' ]] || msg="${msg}."
     local -i code=$2
     in_range 1 255 $code || code=1
   else
-    local -- msg="${script}: line ${line}: ${red}unspecified error${clr}."
+    local -- msg="${script}: line ${line}: ${red}Unspecified error${clr}."
     local -i code=1
   fi
   # collapse whitespace in long error messages
@@ -466,6 +467,7 @@ then
         2) warn "resetting screen size, adjusted ${grn}--boost${clr} value is
                  ${grn}0%${clr} which is a synonym for
                  ${grn}--reset${clr}."; reset; exit 0;;
+      # 3) function can't return 3 twice
       4|6) warn "adjusted ${grn}--boost${clr} value is ${grn}${boost_int}%${clr},
                  the recommended minimum is 25%.";;
         5) warn "the recommended minimum ${grn}--boost${clr} value is 25%.";;
@@ -487,7 +489,8 @@ then
   then
     scr_new_w=${BASH_REMATCH[1]}
     scr_new_h=${BASH_REMATCH[2]}
-    case check_screen in
+    check_screen
+    case $? in
     # 0) do nothing 
       1) warn "resetting screen size, ${grn}--screen
                ${dsp_max_w}x${dsp_max_h}${clr} is a synonym for
